@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Planner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-height:100vh;}
+header{background:#1a1a2e;padding:16px 24px;border-bottom:2px solid #6c63ff;}
+header h1{color:#a78bfa;font-size:1.4rem;}
+header p{color:#666;font-size:0.8rem;margin-top:2px;}
+nav{display:flex;gap:8px;padding:12px 24px;background:#13131f;border-bottom:1px solid #2a2a40;flex-wrap:wrap;}
+.nav-btn{background:#2a2a40;color:#ccc;border:none;padding:7px 16px;border-radius:20px;cursor:pointer;font-size:0.85rem;}
+.nav-btn.active{background:#6c63ff;color:#fff;}
+.tab{display:none;padding:24px;max-width:820px;margin:0 auto;}
+.tab.active{display:block;}
+h2{color:#a78bfa;font-size:1.05rem;border-bottom:1px solid #2a2a40;padding-bottom:8px;margin-bottom:16px;}
+h3{color:#c4b5fd;font-size:0.9rem;margin-bottom:10px;}
+.card{background:#1a1a2e;border:1px solid #2a2a40;border-radius:10px;padding:16px;margin-bottom:14px;}
+input[type=text],input[type=number],input[type=date],select{
+  width:100%;padding:8px 10px;border-radius:7px;border:1px solid #3a3a5c;
+  background:#0f0f1a;color:#e0e0e0;font-size:0.85rem;margin-bottom:8px;outline:none;
+}
+input[type=checkbox]{width:auto;margin:0;cursor:pointer;}
+input:focus,select:focus{border-color:#6c63ff;}
+.row{display:flex;gap:8px;}
+.row input,.row select{flex:1;}
+.btn{background:#6c63ff;color:#fff;border:none;padding:9px 20px;border-radius:7px;cursor:pointer;font-size:0.85rem;margin-top:4px;display:inline-block;}
+.btn:hover{background:#574fd6;}
+.del{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:0 4px;flex-shrink:0;}
+.item{background:#13131f;border:1px solid #2a2a40;border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:0.85rem;}
+.item.done{opacity:0.45;}
+.item.done .ititle{text-decoration:line-through;color:#666;}
+.circle{width:18px;height:18px;border-radius:50%;border:2px solid #6c63ff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.circle.on{background:#6c63ff;}
+.circle.on::after{content:"\2713";font-size:10px;color:#fff;}
+.imeta{flex:1;}
+.ititle{font-weight:500;}
+.isub{font-size:0.75rem;color:#666;margin-top:2px;}
+.tag{font-size:0.7rem;padding:1px 7px;border-radius:10px;display:inline-block;}
+.ts{background:#1e3a5f;color:#60a5fa;}
+.ta{background:#1a3a1a;color:#4ade80;}
+.tm{background:#3a1a3a;color:#e879f9;}
+.tp{background:#3a2a0a;color:#fbbf24;}
+.slabel{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px;}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.sbox{background:#1a1a2e;border:1px solid #2a2a40;border-radius:10px;padding:14px;text-align:center;}
+.sval{font-size:1.5rem;font-weight:bold;color:#a78bfa;}
+.slbl{font-size:0.7rem;color:#888;margin-top:3px;}
+.bar-wrap{background:#0f0f1a;border-radius:5px;height:6px;margin-top:6px;overflow:hidden;}
+.bar{height:6px;border-radius:5px;background:linear-gradient(90deg,#6c63ff,#a78bfa);}
+.wbadge{font-size:0.68rem;background:#2a2040;color:#a78bfa;padding:1px 7px;border-radius:10px;margin-left:5px;}
+.bmilabel{display:inline-block;margin-top:4px;font-size:0.75rem;padding:2px 9px;border-radius:10px;}
+.bu{background:#1e3a5f;color:#60a5fa;}.bn{background:#1a3a1a;color:#4ade80;}
+.bo{background:#3a2a0a;color:#fbbf24;}.bb{background:#3a1a1a;color:#f87171;}
+.empty{color:#555;font-size:0.83rem;padding:6px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>&#128197; My Planner</h1>
+  <p id="datestr"></p>
+</header>
+
+<nav>
+  <button class="nav-btn active" id="nav-tasks">&#9989; Tasks</button>
+  <button class="nav-btn" id="nav-grades">&#128218; Grades</button>
+  <button class="nav-btn" id="nav-fitness">&#128170; Fitness</button>
+  <button class="nav-btn" id="nav-body">⚖️ Body Stats</button>
+</nav>
+
+<!-- TASKS -->
+<div class="tab active" id="tab-tasks">
+  <h2>Tasks</h2>
+  <div class="card">
+    <h3>Add Task</h3>
+    <input id="t-title" type="text" placeholder="What do you need to do?"/>
+    <div class="row">
+      <input id="t-date" type="date"/>
+      <select id="t-type">
+        <option value="s">School</option>
+        <option value="a">Athletics</option>
+        <option value="m">Meeting</option>
+        <option value="p">Personal</option>
+      </select>
+    </div>
+    <button class="btn" id="btn-add-task">+ Add Task</button>
+  </div>
+  <div class="slabel">To Do</div>
+  <div id="tasks-pending"></div>
+  <div id="done-section" style="display:none">
+    <div class="slabel">Completed</div>
+    <div id="tasks-done"></div>
+  </div>
+</div>
+
+<!-- GRADES -->
+<div class="tab" id="tab-grades">
+  <h2>Grades</h2>
+  <div class="stats">
+    <div class="sbox"><div class="sval" id="g-wavg">--</div><div class="slbl">Weighted Avg</div></div>
+    <div class="sbox"><div class="sval" id="g-avg">--</div><div class="slbl">Unweighted Avg</div></div>
+    <div class="sbox"><div class="sval" id="g-count">0</div><div class="slbl">Classes</div></div>
+  </div>
+  <div class="card">
+    <h3>Add / Update Class</h3>
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <button class="btn" id="mode-pct" style="padding:5px 12px;font-size:0.78rem;">% Mode</button>
+      <button class="btn" id="mode-gpa" style="padding:5px 12px;font-size:0.78rem;background:#2a2a40;color:#aaa;">4.0 GPA Mode</button>
+    </div>
+    <div class="row">
+      <input id="g-name" type="text" placeholder="Class name (e.g. Calc 1)"/>
+      <input id="g-pct" type="number" placeholder="Grade %" min="0" max="100" step="0.1"/>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;margin-bottom:8px;">
+      <input id="g-wcheck" type="checkbox"/> Weighted class (AP / Dual Enrollment / Honors)
+    </label>
+    <div id="g-wrow" style="display:none;margin-bottom:8px;">
+      <input id="g-wamt" type="number" placeholder="Class credits (default: 3)" min="0.5" max="10" step="0.5"/>
+    </div>
+    <button class="btn" id="btn-add-grade">+ Add Class</button>
+  </div>
+  <div id="grade-list"></div>
+</div>
+
+<!-- FITNESS -->
+<div class="tab" id="tab-fitness">
+  <h2>Fitness Log</h2>
+  <div class="card">
+    <h3>Log Workout</h3>
+    <div class="row">
+      <select id="w-type">
+        <option value="lift">Lift</option>
+        <option value="run">Run</option>
+        <option value="ball">Basketball</option>
+        <option value="cardio">Cardio</option>
+        <option value="other">Other</option>
+      </select>
+      <input id="w-date" type="date"/>
+    </div>
+    <input id="w-ex" type="text" placeholder="Exercise (e.g. Bench Press, 3mi run)"/>
+    <div class="row">
+      <input id="w-sets" type="text" placeholder="Sets x Reps or Duration"/>
+      <input id="w-wt" type="text" placeholder="Weight / Distance (optional)"/>
+    </div>
+    <button class="btn" id="btn-add-workout">+ Log Workout</button>
+  </div>
+  <div id="workout-list"></div>
+</div>
+
+<!-- BODY -->
+<div class="tab" id="tab-body">
+  <h2>⚖️ Body Stats</h2>
+  <div class="stats">
+    <div class="sbox"><div class="sval" id="b-wt">--</div><div class="slbl">Weight (lbs)</div></div>
+    <div class="sbox"><div class="sval" id="b-ht">--</div><div class="slbl">Height</div></div>
+    <div class="sbox"><div class="sval" id="b-bf">--</div><div class="slbl">Body Fat %</div></div>
+    <div class="sbox"><div class="sval" id="b-bmi">--</div><div class="slbl">BMI</div><div id="b-bmicat"></div></div>
+  </div>
+  <div class="card">
+    <h3>Log Stats</h3>
+    <div class="row">
+      <input id="b-date" type="date"/>
+      <input id="b-lbs" type="number" placeholder="Weight (lbs)" step="0.1"/>
+    </div>
+    <div class="row">
+      <input id="b-ft" type="number" placeholder="Height ft" min="3" max="8"/>
+      <input id="b-in" type="number" placeholder="Inches (0-11)" min="0" max="11"/>
+      <input id="b-bfin" type="number" placeholder="Body Fat % (optional)" step="0.1"/>
+    </div>
+    <input id="b-notes" type="text" placeholder="Notes (optional)"/>
+    <button class="btn" id="btn-add-stat">+ Log Stats</button>
+  </div>
+  <div id="stat-list"></div>
+</div>
+
+<script>
+// === DATA ===
+var tasks    = [];
+var grades   = [];
+var workouts = [];
+var stats    = [];
+
+try { tasks    = JSON.parse(localStorage.getItem('pv5tasks'))    || []; } catch(e){}
+try { grades   = JSON.parse(localStorage.getItem('pv5grades'))   || []; } catch(e){}
+try { workouts = JSON.parse(localStorage.getItem('pv5workouts')) || []; } catch(e){}
+try { stats    = JSON.parse(localStorage.getItem('pv5stats'))    || []; } catch(e){}
+
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){} }
+
+// === DATE SETUP ===
+var today = new Date();
+document.getElementById('datestr').textContent = today.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+var td = today.toISOString().slice(0,10);
+document.getElementById('t-date').value = td;
+document.getElementById('w-date').value = td;
+document.getElementById('b-date').value = td;
+
+// === TABS ===
+function showTab(name) {
+  var names = ['tasks','grades','fitness','body'];
+  for (var i = 0; i < names.length; i++) {
+    document.getElementById('tab-' + names[i]).className = 'tab';
+    document.getElementById('nav-' + names[i]).className = 'nav-btn';
+  }
+  document.getElementById('tab-' + name).className = 'tab active';
+  document.getElementById('nav-' + name).className = 'nav-btn active';
+}
+document.getElementById('nav-tasks').onclick   = function(){ showTab('tasks'); };
+document.getElementById('nav-grades').onclick  = function(){ showTab('grades'); };
+document.getElementById('nav-fitness').onclick = function(){ showTab('fitness'); };
+document.getElementById('nav-body').onclick    = function(){ showTab('body'); };
+
+// === WEIGHTED TOGGLE ===
+var gradeMode = 'pct';
+
+document.getElementById('mode-pct').onclick = function() {
+  gradeMode = 'pct';
+  this.style.background = '#6c63ff'; this.style.color = '#fff';
+  document.getElementById('mode-gpa').style.background = '#2a2a40';
+  document.getElementById('mode-gpa').style.color = '#aaa';
+  document.getElementById('g-pct').placeholder = 'Grade %';
+  document.getElementById('g-pct').max = '100';
+  document.getElementById('g-pct').step = '1';
+  document.getElementById('g-wamt').placeholder = 'Extra weight % (e.g. 5)';
+  renderGrades();
+};
+
+document.getElementById('mode-gpa').onclick = function() {
+  gradeMode = 'gpa';
+  this.style.background = '#6c63ff'; this.style.color = '#fff';
+  document.getElementById('mode-pct').style.background = '#2a2a40';
+  document.getElementById('mode-pct').style.color = '#aaa';
+  document.getElementById('g-pct').placeholder = 'Grade points (0.0 - 4.0)';
+  document.getElementById('g-pct').max = '4.0';
+  document.getElementById('g-pct').step = '0.1';
+  document.getElementById('g-wamt').placeholder = 'Class credits (default: 3)';
+  renderGrades();
+};
+
+var gradeMode = 'pct';
+
+document.getElementById('mode-pct').onclick = function() {
+  gradeMode = 'pct';
+  document.getElementById('mode-pct').style.background = '#6c63ff';
+  document.getElementById('mode-pct').style.color = '#fff';
+  document.getElementById('mode-gpa').style.background = '#2a2a40';
+  document.getElementById('mode-gpa').style.color = '#aaa';
+  document.getElementById('g-pct').placeholder = 'Grade %';
+  document.getElementById('g-pct').max = '100';
+  document.getElementById('g-pct').step = '1';
+  document.getElementById('g-wamt').placeholder = 'Extra weight % (e.g. 5)';
+};
+
+document.getElementById('mode-gpa').onclick = function() {
+  gradeMode = 'gpa';
+  document.getElementById('mode-gpa').style.background = '#6c63ff';
+  document.getElementById('mode-gpa').style.color = '#fff';
+  document.getElementById('mode-pct').style.background = '#2a2a40';
+  document.getElementById('mode-pct').style.color = '#aaa';
+  document.getElementById('g-pct').placeholder = 'Base grade points (0.0 - 4.0)';
+  document.getElementById('g-pct').max = '4.0';
+  document.getElementById('g-pct').step = '0.1';
+  document.getElementById('g-wamt').placeholder = 'GPA boost: AP = +1.0, Honors = +0.5';
+};
+
+var gradeMode = 'pct';
+
+document.getElementById('mode-pct').onclick = function() {
+  gradeMode = 'pct';
+  document.getElementById('mode-pct').style.background = '#6c63ff';
+  document.getElementById('mode-pct').style.color = '#fff';
+  document.getElementById('mode-gpa').style.background = '#2a2a40';
+  document.getElementById('mode-gpa').style.color = '#aaa';
+  document.getElementById('g-pct').placeholder = 'Grade %';
+  document.getElementById('g-pct').max = '100';
+  document.getElementById('g-pct').step = '1';
+  document.getElementById('g-wamt').placeholder = 'Extra weight % (e.g. 5)';
+};
+
+document.getElementById('mode-gpa').onclick = function() {
+  gradeMode = 'gpa';
+  document.getElementById('mode-gpa').style.background = '#6c63ff';
+  document.getElementById('mode-gpa').style.color = '#fff';
+  document.getElementById('mode-pct').style.background = '#2a2a40';
+  document.getElementById('mode-pct').style.color = '#aaa';
+  document.getElementById('g-pct').placeholder = 'Base grade points (0.0 - 4.0)';
+  document.getElementById('g-pct').max = '4.0';
+  document.getElementById('g-pct').step = '0.1';
+  document.getElementById('g-wamt').placeholder = 'GPA boost: AP = +1.0, Honors = +0.5';
+};
+
+document.getElementById('g-wcheck').onchange = function() {
+  document.getElementById('g-wrow').style.display = this.checked ? 'block' : 'none';
+};
+
+// === TASKS ===
+var TCLS = {s:'ts',a:'ta',m:'tm',p:'tp'};
+var TLBL = {s:'School',a:'Athletics',m:'Meeting',p:'Personal'};
+var TICO = {s:'[S]',a:'[A]',m:'[M]',p:'[P]'};
+
+function renderTasks() {
+  var pending = [], done = [];
+  for (var i = 0; i < tasks.length; i++) {
+    if (tasks[i].done) done.push(tasks[i]); else pending.push(tasks[i]);
+  }
+  pending.sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+
+  var ph = '';
+  if (pending.length === 0) {
+    ph = '<div class="empty">No pending tasks!</div>';
+  } else {
+    for (var i = 0; i < pending.length; i++) {
+      var t = pending[i];
+      ph += '<div class="item"><div class="circle" data-tid="'+t.id+'"></div>' +
+        '<div class="imeta"><div class="ititle">'+t.title+'</div>' +
+        '<div class="isub">'+(t.date?t.date+' ':'')+' <span class="tag '+TCLS[t.type]+'">'+TLBL[t.type]+'</span></div>' +
+        '</div><button class="del" data-dtid="'+t.id+'">x</button></div>';
+    }
+  }
+  document.getElementById('tasks-pending').innerHTML = ph;
+
+  var dh = '';
+  for (var i = 0; i < done.length; i++) {
+    var t = done[i];
+    dh += '<div class="item done"><div class="circle on" data-tid="'+t.id+'"></div>' +
+      '<div class="imeta"><div class="ititle">'+t.title+'</div>' +
+      '<div class="isub">'+(t.date?t.date+' ':'')+' <span class="tag '+TCLS[t.type]+'">'+TLBL[t.type]+'</span></div>' +
+      '</div><button class="del" data-dtid="'+t.id+'">x</button></div>';
+  }
+  document.getElementById('tasks-done').innerHTML = dh;
+  document.getElementById('done-section').style.display = done.length ? 'block' : 'none';
+}
+
+document.getElementById('btn-add-task').onclick = function() {
+  var title = document.getElementById('t-title').value.trim();
+  var date  = document.getElementById('t-date').value;
+  var type  = document.getElementById('t-type').value;
+  if (!title) { alert('Please enter a task!'); return; }
+  tasks.push({ id: Date.now(), title: title, date: date, type: type, done: false });
+  save('pv5tasks', tasks);
+  document.getElementById('t-title').value = '';
+  renderTasks();
+};
+
+document.getElementById('tasks-pending').onclick = function(e) {
+  var el = e.target;
+  if (el.dataset.tid) {
+    var id = parseInt(el.dataset.tid);
+    for (var i = 0; i < tasks.length; i++) { if (tasks[i].id===id) { tasks[i].done=true; break; } }
+    save('pv5tasks', tasks); renderTasks();
+  }
+  if (el.dataset.dtid) {
+    var id = parseInt(el.dataset.dtid);
+    for (var i = 0; i < tasks.length; i++) { if (tasks[i].id===id) { tasks.splice(i,1); break; } }
+    save('pv5tasks', tasks); renderTasks();
+  }
+};
+
+document.getElementById('tasks-done').onclick = function(e) {
+  var el = e.target;
+  if (el.dataset.tid) {
+    var id = parseInt(el.dataset.tid);
+    for (var i = 0; i < tasks.length; i++) { if (tasks[i].id===id) { tasks[i].done=false; break; } }
+    save('pv5tasks', tasks); renderTasks();
+  }
+  if (el.dataset.dtid) {
+    var id = parseInt(el.dataset.dtid);
+    for (var i = 0; i < tasks.length; i++) { if (tasks[i].id===id) { tasks.splice(i,1); break; } }
+    save('pv5tasks', tasks); renderTasks();
+  }
+};
+
+// === GRADES ===
+function letterGrade(g) {
+  if(g>=93)return'A'; if(g>=90)return'A-'; if(g>=87)return'B+'; if(g>=83)return'B';
+  if(g>=80)return'B-'; if(g>=77)return'C+'; if(g>=73)return'C'; if(g>=70)return'C-'; return'D';
+}
+
+function gpaToLetter(g) {
+  if(g>=3.7)return'A'; if(g>=3.3)return'A-'; if(g>=3.0)return'B+'; if(g>=2.7)return'B';
+  if(g>=2.3)return'B-'; if(g>=2.0)return'C+'; if(g>=1.7)return'C'; if(g>=1.0)return'D'; return'F';
+}
+
+function renderGrades() {
+  var el = document.getElementById('grade-list');
+  if (!grades.length) {
+    el.innerHTML = '<div class="empty">No classes added yet.</div>';
+    document.getElementById('g-avg').textContent  = '--';
+    document.getElementById('g-wavg').textContent = '--';
+    document.getElementById('g-count').textContent = '0';
+    return;
+  }
+  var h = '', sum = 0, wsum = 0, totalCredits = 0, weightedPts = 0;
+  for (var i = 0; i < grades.length; i++) {
+    var g = grades[i];
+    var isGPA = (g.mode === 'gpa');
+    var credits = (g.weighted && g.wamt) ? g.wamt : 3;
+    if (isGPA) {
+      var boost = (g.weighted && g.wamt) ? g.wamt : 0;
+      var weightedVal = parseFloat((g.pct + boost).toFixed(2));
+      sum += g.pct;
+      wsum += weightedVal;
+      var barW = (weightedVal / 5.0) * 100;
+      var ltr = gpaToLetter(g.pct);
+      var wtdLtr = gpaToLetter(weightedVal);
+      h += '<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="flex:1"><strong>'+g.name+'</strong>' +
+        (g.weighted ? '<span class="wbadge">+'+boost+' wtd</span>' : '') +
+        '<span style="float:right;color:#a78bfa;font-weight:bold">'+(g.weighted ? weightedVal+' wtd GPA' : g.pct+' GPA')+' ('+( g.weighted ? wtdLtr : ltr)+')</span>' +
+        '<div class="bar-wrap"><div class="bar" style="width:'+barW+'%"></div></div>' +
+        '</div><button class="del" data-gidx="'+i+'">x</button></div></div>';
+    } else {
+      sum  += g.pct;
+      wsum += g.pct + (g.weighted ? (g.wamt||5) : 0);
+      h += '<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="flex:1"><strong>'+g.name+'</strong>' +
+        (g.weighted ? '<span class="wbadge">+'+(g.wamt||5)+'% wtd</span>' : '') +
+        '<span style="float:right;color:#a78bfa;font-weight:bold">'+g.pct+'% ('+letterGrade(g.pct)+')</span>' +
+        '<div class="bar-wrap"><div class="bar" style="width:'+g.pct+'%"></div></div>' +
+        '</div><button class="del" data-gidx="'+i+'">x</button></div></div>';
+    }
+  }
+  el.innerHTML = h;
+  var gpaGrades = grades.filter(function(g){return g.mode==='gpa';});
+  var pctGrades = grades.filter(function(g){return g.mode!=='gpa';});
+  if (gpaGrades.length && !pctGrades.length) {
+    var gpaUnwtd = (gpaGrades.reduce(function(s,g){return s+g.pct;},0)/gpaGrades.length).toFixed(2);
+    var gpaWtd   = (gpaGrades.reduce(function(s,g){var b=g.weighted&&g.wamt?g.wamt:0;return s+g.pct+b;},0)/gpaGrades.length).toFixed(2);
+    document.getElementById('g-avg').textContent  = gpaUnwtd + ' GPA';
+    document.getElementById('g-wavg').textContent = gpaWtd + ' GPA';
+  } else if (pctGrades.length && !gpaGrades.length) {
+    var pctAvg = (pctGrades.reduce(function(s,g){return s+g.pct;},0)/pctGrades.length).toFixed(1);
+    var pctWAvg = (pctGrades.reduce(function(s,g){return s+g.pct+(g.weighted?(g.wamt||5):0);},0)/pctGrades.length).toFixed(1);
+    document.getElementById('g-avg').textContent  = pctAvg + '%';
+    document.getElementById('g-wavg').textContent = pctWAvg + '%';
+  } else {
+    document.getElementById('g-avg').textContent  = grades.length + ' mixed';
+    document.getElementById('g-wavg').textContent = '--';
+  }
+  document.getElementById('g-count').textContent = grades.length;
+}
+
+document.getElementById('btn-add-grade').onclick = function() {
+  var name     = document.getElementById('g-name').value.trim();
+  var pct      = parseFloat(document.getElementById('g-pct').value);
+  var weighted = document.getElementById('g-wcheck').checked;
+  var wamt     = weighted ? (parseFloat(document.getElementById('g-wamt').value) || (gradeMode==='gpa'?1.0:5)) : 0;
+  if (!name || isNaN(pct)) { alert('Enter a class name and grade!'); return; }
+  if (gradeMode==='gpa' && (pct < 0 || pct > 4.0)) { alert('GPA must be between 0.0 and 4.0!'); return; }
+  var found = false;
+  for (var i = 0; i < grades.length; i++) {
+    if (grades[i].name.toLowerCase() === name.toLowerCase()) {
+      grades[i] = {name:name,pct:pct,weighted:weighted,wamt:wamt,mode:gradeMode}; found = true; break;
+    }
+  }
+  if (!found) grades.push({name:name,pct:pct,weighted:weighted,wamt:wamt,mode:gradeMode});
+  save('pv5grades', grades);
+  document.getElementById('g-name').value = '';
+  document.getElementById('g-pct').value = '';
+  document.getElementById('g-wcheck').checked = false;
+  document.getElementById('g-wamt').value = '';
+  document.getElementById('g-wrow').style.display = 'none';
+  renderGrades();
+};
+
+document.getElementById('grade-list').onclick = function(e) {
+  if (e.target.dataset.gidx !== undefined) {
+    grades.splice(parseInt(e.target.dataset.gidx), 1);
+    save('pv5grades', grades); renderGrades();
+  }
+};
+
+// === WORKOUTS ===
+var WICO = {lift:'Lift',run:'Run',ball:'Basketball',cardio:'Cardio',other:'Other'};
+
+function renderWorkouts() {
+  var el = document.getElementById('workout-list');
+  if (!workouts.length) { el.innerHTML = '<div class="empty">No workouts logged yet.</div>'; return; }
+  var h = '';
+  for (var i = 0; i < workouts.length; i++) {
+    var w = workouts[i];
+    h += '<div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+      '<div style="flex:1"><strong>'+w.ex+'</strong> <span style="font-size:0.75rem;color:#a78bfa">['+WICO[w.type]+']</span><br>' +
+      '<span style="font-size:0.76rem;color:#666">'+w.date+(w.sets?' · '+w.sets:'')+(w.wt?' · '+w.wt:'')+'</span></div>' +
+      '<button class="del" data-wid="'+w.id+'">x</button></div>';
+  }
+  el.innerHTML = h;
+}
+
+document.getElementById('btn-add-workout').onclick = function() {
+  var type = document.getElementById('w-type').value;
+  var date = document.getElementById('w-date').value;
+  var ex   = document.getElementById('w-ex').value.trim();
+  var sets = document.getElementById('w-sets').value.trim();
+  var wt   = document.getElementById('w-wt').value.trim();
+  if (!ex || !date) { alert('Enter exercise and date!'); return; }
+  workouts.unshift({id:Date.now(),type:type,date:date,ex:ex,sets:sets,wt:wt});
+  save('pv5workouts', workouts);
+  document.getElementById('w-ex').value = '';
+  document.getElementById('w-sets').value = '';
+  document.getElementById('w-wt').value = '';
+  renderWorkouts();
+};
+
+document.getElementById('workout-list').onclick = function(e) {
+  if (e.target.dataset.wid) {
+    var id = parseInt(e.target.dataset.wid);
+    for (var i = 0; i < workouts.length; i++) { if(workouts[i].id===id){workouts.splice(i,1);break;} }
+    save('pv5workouts', workouts); renderWorkouts();
+  }
+};
+
+// === BODY STATS ===
+function calcBMI(lbs,ft,ins) {
+  var tot = ft*12+ins;
+  if (!tot || !lbs) return null;
+  return ((lbs/(tot*tot))*703).toFixed(1);
+}
+function bmiCat(b) {
+  if(b<18.5)return{l:'Underweight',c:'bu'};
+  if(b<25)return{l:'Normal',c:'bn'};
+  if(b<30)return{l:'Overweight',c:'bo'};
+  return{l:'Obese',c:'bb'};
+}
+
+function renderStats() {
+  var el = document.getElementById('stat-list');
+  var s0 = stats[0];
+  if (s0) {
+    document.getElementById('b-wt').textContent  = s0.lbs + ' lbs';
+    document.getElementById('b-ht').textContent  = s0.ft ? s0.ft+"'"+s0.inc+'"' : '--';
+    document.getElementById('b-bf').textContent  = s0.bf ? s0.bf+'%' : '--';
+    var bmi = s0.ft ? calcBMI(s0.lbs,s0.ft,s0.inc) : null;
+    document.getElementById('b-bmi').textContent = bmi || '--';
+    if (bmi) { var cat=bmiCat(parseFloat(bmi)); document.getElementById('b-bmicat').innerHTML='<span class="bmilabel '+cat.c+'">'+cat.l+'</span>'; }
+    else { document.getElementById('b-bmicat').innerHTML=''; }
+  }
+  if (!stats.length) { el.innerHTML='<div class="empty">No stats logged yet.</div>'; return; }
+  var h = '';
+  for (var i = 0; i < stats.length; i++) {
+    var s = stats[i];
+    var bmi = s.ft ? calcBMI(s.lbs,s.ft,s.inc) : null;
+    var cat = bmi ? bmiCat(parseFloat(bmi)) : null;
+    h += '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+      '<div><strong>'+s.date+'</strong><br>' +
+      '<span style="font-size:0.83rem;color:#ccc">Weight: '+s.lbs+' lbs' +
+      (s.ft?' | Height: '+s.ft+"'"+s.inc+'"':'') +
+      (s.bf?' | BF: '+s.bf+'%':'')+'</span><br>' +
+      (bmi?'<span style="font-size:0.78rem;color:#888">BMI: '+bmi+' <span class="bmilabel '+cat.c+'">'+cat.l+'</span></span><br>':'') +
+      (s.notes?'<span style="font-size:0.76rem;color:#666">'+s.notes+'</span>':'') +
+      '</div><button class="del" data-sid="'+s.id+'">x</button></div></div>';
+  }
+  el.innerHTML = h;
+}
+
+document.getElementById('btn-add-stat').onclick = function() {
+  var date  = document.getElementById('b-date').value;
+  var lbs   = parseFloat(document.getElementById('b-lbs').value);
+  var ft    = parseInt(document.getElementById('b-ft').value)  || 0;
+  var inc   = parseInt(document.getElementById('b-in').value)  || 0;
+  var bfv   = document.getElementById('b-bfin').value.trim();
+  var notes = document.getElementById('b-notes').value.trim();
+  if (!date || isNaN(lbs)) { alert('Enter date and weight!'); return; }
+  stats.unshift({id:Date.now(),date:date,lbs:lbs,ft:ft,inc:inc,bf:bfv?parseFloat(bfv):null,notes:notes});
+  save('pv5stats', stats);
+  document.getElementById('b-lbs').value  = '';
+  document.getElementById('b-bfin').value = '';
+  document.getElementById('b-notes').value = '';
+  renderStats();
+};
+
+document.getElementById('stat-list').onclick = function(e) {
+  if (e.target.dataset.sid) {
+    var id = parseInt(e.target.dataset.sid);
+    for (var i = 0; i < stats.length; i++) { if(stats[i].id===id){stats.splice(i,1);break;} }
+    save('pv5stats', stats); renderStats();
+  }
+};
+
+// === INIT ===
+renderTasks();
+renderGrades();
+renderWorkouts();
+renderStats();
+</script>
+</body>
+</html>
